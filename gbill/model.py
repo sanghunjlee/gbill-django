@@ -1,5 +1,8 @@
 from typing import Optional, Union, List, Dict, Any
+
+from tools import ftoc
 from exceptions import UnequalDistributionError, UnevenDistributionError
+
 
 class Transaction:
     descr: str
@@ -43,6 +46,9 @@ class Invoice():
 
     def __getitem__(self, key: int) -> Transaction:
         return self.trans[key]
+
+    def __setitem__(self, key: int, new_value: Transaction):
+        self.trans[key] = new_value
     
     def get_payers(self):
         payers = []
@@ -53,7 +59,10 @@ class Invoice():
 
     def add_transaction(self, *args, **kwargs):
         try:
-            self.trans.append(Transaction(*args, **kwargs))
+            if type(args[0]) is Transaction:
+                self.trans.append(args[0])
+            else:
+                self.trans.append(Transaction(*args, **kwargs))
         except Exception as e:
             print(e)    
     
@@ -69,6 +78,7 @@ class Invoice():
     def invoice(self) -> List[Transaction]:
         inv = []
         cashflow = {}
+        # creating a cashflow of each person involved
         for n, p, d in [(t.payee, t.payment, t.distribution) for t in self.trans]:
             if n not in cashflow.keys():
                 cashflow[n] = 0
@@ -79,6 +89,8 @@ class Invoice():
                 cashflow[k] -= v
         cashflow = {k:round(v, 2) for k,v in cashflow.items()}
         i = 0
+        
+        # min-max the cashflow as long as there is nonzero value in the cashflow vlaues
         while sum([abs(v) for v in cashflow.values()]) != 0:
             print(i, "::" , cashflow)
             most_neg = min(cashflow.values())
@@ -95,7 +107,8 @@ class Invoice():
             payment = min(abs(most_neg), abs(most_pos))
             cashflow[lpayee] = round(cashflow[lpayee] - payment, 2)
             cashflow[lpayer] = round(cashflow[lpayer] + payment, 2)
-            inv.append(Transaction(lpayee, lpayer, payment))
+            inv_desc = f'{lpayer} pays {ftoc(payment)} to {lpayee}.'
+            inv.append(Transaction(inv_desc, lpayee, lpayer, payment))
             i += 1
         return inv
 

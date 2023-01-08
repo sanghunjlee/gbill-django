@@ -3,11 +3,108 @@ from tkinter import ttk
 from tkinter import font as tkFont
 from typing import Dict, Any, List, Optional
 
-from model import Invoice
+from model import Invoice, Transaction
 from tools import stof, rmv_dups
 
 WIN_WIDTH = 600
 WIN_HEIGHT = 400
+
+class VerticalScrolledFrame(ttk.Frame):
+    """A pure Tkinter scrollable frame that actually works!
+    * Use the 'interior' attribute to place widgets inside the scrollable frame.
+    * Construct and pack/place/grid normally.
+    * This frame only allows vertical scrolling.
+    """
+    def __init__(self, parent, *args, **kw):
+        ttk.Frame.__init__(self, parent, *args, **kw)
+        _width = kw.get('width', None)
+
+        # Create a canvas object and a vertical scrollbar for scrolling it.
+        vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
+        vscrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=False)
+        self.canvas = tk.Canvas(self, bd=0, highlightthickness=0,
+                           yscrollcommand=vscrollbar.set)
+        if _width:
+            self.canvas.config(width=_width)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vscrollbar.config(command=self._yview)
+
+        # Reset the view
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
+
+        # Create a frame inside the canvas which will be scrolled with it.
+        self.interior = interior = ttk.Frame(self.canvas)
+        if _width:
+            self.interior.config(width=_width)
+        interior_id = self.canvas.create_window(0, 0, window=interior,
+                                           anchor=tk.NW)
+
+        # Track changes to the canvas and frame width and sync them,
+        # also updating the scrollbar.
+        def _configure_interior(event):
+            # Update the scrollbars to match the size of the inner frame.
+            size = (self.interior.winfo_reqwidth(), self.interior.winfo_reqheight())
+            self.canvas.config(scrollregion="0 0 %s %s" % size)
+            if interior.winfo_reqwidth() != self.canvas.winfo_width():
+                '''# Update the canvas's width to fit the inner frame.
+                self.canvas.config(width=self.interior.winfo_reqwidth())'''
+                # Update the interior's width to fit the canvas
+                self.canvas.itemconfigure(interior_id, width=self.canvas.winfo_width())
+        interior.bind('<Configure>', _configure_interior)
+
+        def _configure_canvas(event):
+            if interior.winfo_reqwidth() != self.canvas.winfo_width():
+                # Update the inner frame's width to fill the canvas.
+                #print('canvas', self.canvas.winfo_width())
+                self.canvas.itemconfigure(interior_id, width=self.canvas.winfo_width())
+        self.canvas.bind('<Configure>', _configure_canvas)
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
+    def _on_mousewheel(self, event):
+        if self.interior.winfo_reqheight() > self.canvas.winfo_height():
+            delta = (event.delta/120)
+            self.canvas.yview_scroll(int(-1*delta), "units")
+
+    def _yview(self, *args):
+        if self.interior.winfo_reqheight() > self.canvas.winfo_height():
+            self.canvas.yview(*args)
+
+class MessageView(tk.Toplevel):
+    def __init__(self, parent, message: str = '', *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.parent = parent
+        self.msg = tk.StringVar(self, message)
+        
+        display_frame = VerticalScrolledFrame(self)
+        button_frame = tk.Frame(self)
+        msg_label = tk.Label(display_frame.interior, anchor='nw', justify='left', textvariable=self.msg)
+        close_btn = tk.Button(button_frame, text='Close', command=lambda: self.destroy())
+
+        display_frame.pack(side='top', fill='both', expand=True, padx=4, pady=4)
+        button_frame.pack(side='bottom', fill='both', expand=False, padx=4, pady=4)
+        msg_label.pack(side='top', fill='both', expand=True)
+        close_btn.pack(side='right', fill='x', expand=True)
+    
+    def show(self):
+        center(self)
+        self.resizable(False, False)
+        self.wm_transient(self.parent)
+        self.grab_set()
+        self.focus_set()
+        self.deiconify()
+        self.wm_protocol('WM_DELETE_WINDOW', self.destroy)
+        self.wait_window(self)
+        return
+
+class InvoiceView(MessageView):
+    def __init__(self, parent, invoice: List[Transaction], *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.invoice = invoice
+        self.msg.set(
+            '\n'.join([f'{str(i).zfill(2)} : {t.descr}' for i, t in enumerate(self.invoice)])
+        )
+
 
 class PayerInputFrame(tk.Frame):
     _index: int
@@ -15,14 +112,14 @@ class PayerInputFrame(tk.Frame):
     values: List[str]
     name: tk.StringVar
     amnt: tk.StringVar
-    def __init__(self, parent, index: int, values: List[str] = [], name: str = '', *args, **kwargs):
+    def __init__(self, parent, index: int, values: List[str] = [], name: str = '', amount: str = '', *args, **kwargs):
         self._index = index
         self.state = True
         self.values = values
         self.parent = parent
         super().__init__(parent, *args, **kwargs)
         self.name = tk.StringVar(self, name if len(values) > 0 else f'Name {self._index}')
-        self.amnt = tk.StringVar(self, '')
+        self.amnt = tk.StringVar(self, amount)
         
         del_btn = tk.Button(self, text='X', anchor='w', relief='flat', command=self.del_this)
         name_lbl = tk.Label(self, text='Payer Name:')
@@ -50,10 +147,10 @@ class PayerInputFrame(tk.Frame):
         self.event_generate('<<delpayer>>')
 
 class TransInputView(tk.Toplevel):
-    ret: Dict[str, Any]
+    ret: Transaction
     pifs: List[PayerInputFrame|tk.Button]
     ppl_list: List[str]
-    def __init__(self, parent, init_val: Dict[str, Any] = {}):
+    def __init__(self, parent, init_val: Optional[Transaction] = None):
         super().__init__(parent)
         self.parent = parent
         self.ppl_list = self.parent.invoice.get_payers()
@@ -65,6 +162,12 @@ class TransInputView(tk.Toplevel):
         self.init_ui()
         self.bind_ui()
         self.grid_ui()
+        if self.ret:
+            self.sv_descr.set(self.ret.descr)
+            self.sv_payee.set(self.ret.payee)
+            self.sv_amount.set(str(self.ret.amount))
+            for k,v in self.ret.distribution.items():
+                self.add_new_payer(name=k, amount=str(v))
 
     def init_ui(self):
         instruction = '\n'.join((
@@ -116,10 +219,10 @@ class TransInputView(tk.Toplevel):
         self.okay_btn.grid(column=2, row=0, sticky='ew', padx=4)
         self.cancel_btn.grid(column=3, row=0, sticky='ew', padx=4)
 
-    def add_new_payer(self):
+    def add_new_payer(self, **kwargs):
         r = max([_._index for _ in self.pifs] + [0]) + 1
         _name = self.ppl_list[0] if r ==1 else ''
-        _ = PayerInputFrame(self.payer_lfm, values=self.ppl_list, index=r)
+        _ = PayerInputFrame(self.payer_lfm, values=self.ppl_list, index=r, **kwargs)
         _.bind('<<delpayer>>', self.del_payer)
         _.bind('<<PayerUpdate>>', self.update_ppllist)
         self.pifs.append(_)
@@ -173,15 +276,16 @@ class TransInputView(tk.Toplevel):
         payer_amnt = {}
         for _ in [pif.get_values() for pif in self.pifs]:
             payer_amnt[_[0]] = _[1]
-        self.ret["descr"] = self.sv_descr.get()
-        self.ret["payee"] = self.sv_payee.get()
-        self.ret["payer"] = list(payer_amnt.keys())
-        self.ret["amount"] = stof(self.sv_amount.get())
-        self.ret["distribution"] = payer_amnt
+        descr = self.sv_descr.get()
+        payee = self.sv_payee.get()
+        payer = list(payer_amnt.keys())
+        amount= stof(self.sv_amount.get())
+        distribution = payer_amnt
+        self.ret = Transaction(descr, payee, payer, amount, distribution)
         self.destroy()
 
     def cancel(self):
-        self.ret = {}
+        self.ret = None
         self.destroy()
 
     def show(self):
@@ -194,67 +298,6 @@ class TransInputView(tk.Toplevel):
         self.wait_window(self)
         return self.ret
 
-class VerticalScrolledFrame(ttk.Frame):
-    """A pure Tkinter scrollable frame that actually works!
-    * Use the 'interior' attribute to place widgets inside the scrollable frame.
-    * Construct and pack/place/grid normally.
-    * This frame only allows vertical scrolling.
-    """
-    def __init__(self, parent, *args, **kw):
-        ttk.Frame.__init__(self, parent, *args, **kw)
-        _width = kw.get('width', None)
-
-        # Create a canvas object and a vertical scrollbar for scrolling it.
-        vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
-        vscrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=False)
-        self.canvas = tk.Canvas(self, bd=0, highlightthickness=0,
-                           yscrollcommand=vscrollbar.set)
-        if _width:
-            self.canvas.config(width=_width)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        vscrollbar.config(command=self._yview)
-
-        # Reset the view
-        self.canvas.xview_moveto(0)
-        self.canvas.yview_moveto(0)
-
-        # Create a frame inside the canvas which will be scrolled with it.
-        self.interior = interior = ttk.Frame(self.canvas)
-        if _width:
-            self.interior.config(width=_width)
-        interior_id = self.canvas.create_window(0, 0, window=interior,
-                                           anchor=tk.NW)
-
-        # Track changes to the canvas and frame width and sync them,
-        # also updating the scrollbar.
-        def _configure_interior(event):
-            # Update the scrollbars to match the size of the inner frame.
-            size = (self.interior.winfo_reqwidth(), self.interior.winfo_reqheight())
-            self.canvas.config(scrollregion="0 0 %s %s" % size)
-            if interior.winfo_reqwidth() != self.canvas.winfo_width():
-                '''# Update the canvas's width to fit the inner frame.
-                self.canvas.config(width=self.interior.winfo_reqwidth())'''
-                # Update the interior's width to fit the canvas
-                self.canvas.itemconfigure(interior_id, width=self.canvas.winfo_width())
-        interior.bind('<Configure>', _configure_interior)
-
-        def _configure_canvas(event):
-            if interior.winfo_reqwidth() != self.canvas.winfo_width():
-                # Update the inner frame's width to fill the canvas.
-                print('canvas', self.canvas.winfo_width())
-                self.canvas.itemconfigure(interior_id, width=self.canvas.winfo_width())
-        self.canvas.bind('<Configure>', _configure_canvas)
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-
-    def _on_mousewheel(self, event):
-        if self.interior.winfo_reqheight() > self.canvas.winfo_height():
-            delta = (event.delta/120)
-            self.canvas.yview_scroll(int(-1*delta), "units")
-
-    def _yview(self, *args):
-        if self.interior.winfo_reqheight() > self.canvas.winfo_height():
-            self.canvas.yview(*args)
-
 class BillListBox(VerticalScrolledFrame):
     listvariable: List[Any]
     cur_selection: tk.IntVar
@@ -263,8 +306,10 @@ class BillListBox(VerticalScrolledFrame):
 
     def __init__(self, parent, listvariable: List[Any]=[], *args, **kw):
         super().__init__(parent, *args, **kw)
-        self.normal_font = tkFont.Font(size=9, weight='normal')
-        self.bold_font = tkFont.Font(size=9, weight='bold')
+        self.normal_font = tkFont.Font(**tkFont.nametofont('TkFixedFont').actual())
+        self.normal_font.config(size=9, weight=tkFont.NORMAL)
+        self.bold_font = tkFont.Font(**tkFont.nametofont('TkFixedFont').actual())
+        self.bold_font.config(size=9, weight=tkFont.BOLD)
         self.cur_selection = tk.IntVar(self, -1)
         self.cur_selection.trace_add('write', self.update_selection)
         self.listvariable = listvariable
@@ -274,7 +319,7 @@ class BillListBox(VerticalScrolledFrame):
         for _ in self.interior.winfo_children():
             _.destroy()
         _header = ' '.join(('#'.ljust(3), 'DESCR'.ljust(32), 'PAYEE'.ljust(16), 'AMOUNT'.rjust(9)))
-        header_lbl = tk.Label(self.interior, anchor='w', text=_header, padx=4, pady=4)
+        header_lbl = tk.Label(self.interior, anchor='w', font=self.bold_font, text=_header, padx=4, pady=4)
         header_lbl.pack(side=tk.TOP, fill=tk.X, expand=True, pady=1)
         for indx, var in enumerate(self.listvariable):
             _txt = ' '.join((str(indx+1).ljust(3), var.descr[:32].ljust(32), var.payee[:16].ljust(16), str(var.amount).rjust(9)))
@@ -303,7 +348,6 @@ class BillListBox(VerticalScrolledFrame):
             else:
                 self.__getattribute__(f'BTN{i}').config(font=self.normal_font)
 
-
 class MainView(tk.Frame):
     _state: int
     invoice: Invoice
@@ -324,7 +368,7 @@ class MainView(tk.Frame):
         # TODO: Change ppl_disp from Label to Canvas to allow graphics
         self.ppl_disp = tk.Label(self.ppl_lfm, anchor='w')
         self.lfrm = tk.LabelFrame(self, text="Transactions")
-        self.bill_lbx = BillListBox(self.lfrm, width=300)
+        self.bill_lbx = BillListBox(self.lfrm, width=500)
         self.rfrm = tk.Frame(self)
         self.add_btn = tk.Button(self.rfrm, width=10, text='Add', command=self.add_btn_pressed)
         self.mod_btn = tk.Button(self.rfrm, width=10, text='Edit', command=self.mod_btn_pressed)
@@ -352,11 +396,20 @@ class MainView(tk.Frame):
     def add_btn_pressed(self):
         tiv = TransInputView(self)
         resp = tiv.show()
-        self.invoice.add_transaction(**resp)
-        self._state = 1
+        if resp:
+            self.invoice.add_transaction(resp)
+            self._state = 1
 
     def mod_btn_pressed(self):
-        pass
+        selection = self.bill_lbx.cur_selection.get()
+        if selection >= 0:
+            old_trans = self.invoice[selection]
+            tiv = TransInputView(self, init_val=old_trans)
+            new_trans = tiv.show()
+            if new_trans:
+                self.invoice[selection] = new_trans
+                self._state = 1
+            
 
     def del_btn_pressed(self):
         selection = self.bill_lbx.cur_selection.get()
@@ -369,7 +422,9 @@ class MainView(tk.Frame):
         self._state = 1
 
     def inv_btn_pressed(self):
-        print(self.invoice.invoice())
+        iv = InvoiceView(self, self.invoice.invoice())
+        iv.show()
+
 
     def update_ui(self):
         if self._state == 1:
@@ -378,7 +433,7 @@ class MainView(tk.Frame):
             self._state = 0
         self.after(50, self.update_ui)
 
-def draw_roundRect(canvas: tk.Canvas, x: int, y: int, w: int, h: int, radius=25, **kwargs):
+""" def draw_roundRect(canvas: tk.Canvas, x: int, y: int, w: int, h: int, radius=25, **kwargs):
         x1, x2 = x+radius, x+w-radius
         y1, y2 = y+radius, y+h-radius
 
@@ -404,7 +459,7 @@ def draw_roundRect(canvas: tk.Canvas, x: int, y: int, w: int, h: int, radius=25,
             x1, y1+radius,
             x1, y1
         )
-        return canvas.create_polygon(points, **kwargs, smooth=True)
+        return canvas.create_polygon(points, **kwargs, smooth=True) """
 
 def center(win):
     """
@@ -429,6 +484,11 @@ def init_app(app_name, version):
     root.title(f"{app_name} v.{version}")
     app = MainView(root)
     app.mainloop()
+
+def test():
+    root = tk.Tk()
+    mv = MessageView(root)
+    mv.show()
 
 if __name__ == '__main__':
     init_app('test', '0.0.dev')
