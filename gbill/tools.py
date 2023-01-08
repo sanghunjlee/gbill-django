@@ -8,6 +8,10 @@ def stof(str_val: str) -> float:
         return 0.0 if _.strip() == '' else float(_)
     return 0.0
 
+def ftoc(float_val: float) -> str:
+    return ('$' + str(float_val)).replace('$-', '-$')
+
+
 def rmv_dups(dups: List[Any]) -> List[Any]:
     no_dups = []
     if len(dups) > 0:
