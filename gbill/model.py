@@ -1,7 +1,9 @@
-from typing import Optional, Union, List, Dict, Any
+from typing import Optional, Union, List, Dict, Any, Tuple
+import json
+from json import JSONDecodeError
 
-from tools import ftoc
-from exceptions import UnequalDistributionError, UnevenDistributionError
+from .tools import ftoc, log10, rpad
+from .exceptions import UnequalDistributionError, UnevenDistributionError
 
 
 class Transaction:
@@ -37,6 +39,15 @@ class Transaction:
 
     def __repr__(self) -> str:
         return f"{self.descr[:26]}\t{self.payee}\t{self.amount}"
+    
+    def data(self) -> Dict[str, Any]:
+        return {
+            'descr' : self.descr,
+            'payee' : self.payee,
+            'payer' : self.payer,
+            'amount' : self.amount,
+            'distribution' : self.distribution,
+        }
 
 class Invoice():
     trans: List[Transaction]
@@ -50,16 +61,100 @@ class Invoice():
     def __setitem__(self, key: int, new_value: Transaction):
         self.trans[key] = new_value
     
-    def get_payers(self):
+    def get_payers(self) -> List[str]:
+        """Return sorted list of all people involved in the transactions
+        * Includes payee even if payee does not need to pay someone else back
+        """
         payers = []
         for t in self.trans:
             payers.append(t.payee)
             payers.extend(t.payer)
         return sorted([*set(payers)])
 
+    def get_array(self) -> List[List[float]]:
+        """Return n x m array, where:
+         a_nm = amount of money in nth transaction for mth person
+        * n -- index of the transaction
+        * m -- index of the sorted list of all people = self.get_payers() 
+        """
+        arr = []
+        ppl_list = self.get_payers()
+        for t in self.trans:
+            _d = t.distribution
+            for missing_p in [_ for _ in ppl_list if _ not in _d.keys()]:
+                _d[missing_p] = 0
+            arr.append([_d[p] for p in ppl_list])
+        return arr
+
+    def get_matrix(self) -> List[List[float]]:
+        ppl = self.get_payers()
+        arr = self.get_array()
+        mat = []
+        for _ in ppl:
+            mat.append([0.0] * len(ppl))
+        for index, a in enumerate(arr):
+            i = ppl.index(self.trans[index].payee)
+            for j in range(len(ppl)):
+                if i != j:
+                    mat[i][j] += a[j]
+                else:
+                    mat[i][j] = 0
+
+        # mat[i][j] = self.trans.
+        # i := index of payee
+        # j := index of payer
+        return mat
+    def list_matrix(self) -> List[List[str]]:
+        mat = self.get_matrix()
+        ppl = self.get_payers()
+        ret_list = []
+        ret_list.append(['', *ppl])
+        for i, m in enumerate(mat):
+            ret_list.append([ppl[i], *["{:.2f}".format(a) for a in m]])
+        return ret_list
+
+
+    def list_all(self, show_detail: bool = False) -> List[List[str]]:
+        """Return a list of all transaction in formatted string.
+
+        Parameter:
+        * show_detail: If true, show description
+        """
+        _header = self.get_payers()
+        _array = self.get_array()
+        ret_list = []
+        h = ['Payee', *_header, 'Subtotal']
+        if show_detail:
+            h.insert(1, 'Desc'.center(20))
+        ret_list.append(h)
+        
+        m = len(_array[0])
+        total = [0.0] * m
+        for i, a in enumerate(_array):
+            el = [
+                self.trans[i].payee, 
+                *("{:.2f}".format(_) for _ in a), 
+                "{:.2f}".format(sum(a))
+            ]
+            if show_detail:
+                el.insert(1, rpad(self.trans[i].descr, 20))
+            ret_list.append(el)
+            for j, _ in enumerate(a):
+                total[j] += _
+        footer = [
+            'Total',
+            *["{:.2f}".format(_) for _ in total],
+            "{:.2f}".format(sum(total))
+        ]
+        if show_detail:
+            footer[0] = ''
+            footer.insert(1, 'Total'.rjust(20))
+        ret_list.append(footer)
+        return ret_list
+
     def add_transaction(self, *args, **kwargs):
         try:
-            if type(args[0]) is Transaction:
+            if len(args) > 0 and type(args[0]) is Transaction:
                 self.trans.append(args[0])
             else:
                 self.trans.append(Transaction(*args, **kwargs))
@@ -74,7 +169,31 @@ class Invoice():
 
     def clear(self):
         self.trans.clear()
-    
+
+    def save(self, *args, **kwargs) -> str:
+        if len(self.trans) == 0:
+            return ''
+        else:
+            return json.dumps([t.data() for t in self.trans], *args, **kwargs)
+
+    def load(self, data: str) -> bool:
+        try:
+            data_list = json.loads(data)
+        except JSONDecodeError:
+            print("load: JSONDecodeError")
+            return False
+        _backup = self.trans
+        self.clear()
+        try:
+            for d in data_list:
+                print(d)
+                self.add_transaction(**d)
+        except Exception as e:
+            print(e)
+            self.trans = _backup
+            return False
+        return True
+
     def invoice(self) -> List[Transaction]:
         inv = []
         cashflow = {}
@@ -87,7 +206,7 @@ class Invoice():
                 if k not in cashflow.keys():
                     cashflow[k] = 0
                 cashflow[k] -= v
-        cashflow = {k:round(v, 2) for k,v in cashflow.items()}
+        #cashflow = {k:round(v, 2) for k,v in cashflow.items()}
         i = 0
         
         # min-max the cashflow as long as there is nonzero value in the cashflow vlaues
@@ -105,8 +224,13 @@ class Invoice():
                 if lpayee != "" and lpayer != "":
                     break
             payment = min(abs(most_neg), abs(most_pos))
-            cashflow[lpayee] = round(cashflow[lpayee] - payment, 2)
-            cashflow[lpayer] = round(cashflow[lpayer] + payment, 2)
+            new_lpayee_value = cashflow[lpayee] - payment
+            new_lpayer_value = cashflow[lpayer] + payment
+            if payment == 0 or log10(payment) < -3:
+                new_lpayee_value = 0
+                new_lpayer_value = 0
+            cashflow[lpayee] = new_lpayee_value
+            cashflow[lpayer] = new_lpayer_value
             inv_desc = f'{lpayer} pays {ftoc(payment)} to {lpayee}.'
             inv.append(Transaction(inv_desc, lpayee, lpayer, payment))
             i += 1
