@@ -1,4 +1,5 @@
 from typing import Dict, List, Any
+import math
 
 def stof(str_val: str) -> float:
     if type(str_val) is str:
@@ -9,8 +10,10 @@ def stof(str_val: str) -> float:
     return 0.0
 
 def ftoc(float_val: float) -> str:
-    return ('$' + str(float_val)).replace('$-', '-$')
+    return ('$' + str(round(float_val,2))).replace('$-', '-$')
 
+def log10(val: float) -> float:
+    return math.log10(val)
 
 def rmv_dups(dups: List[Any]) -> List[Any]:
     no_dups = []
@@ -19,6 +22,12 @@ def rmv_dups(dups: List[Any]) -> List[Any]:
             if _ not in no_dups:
                 no_dups.append(_)
     return no_dups
+
+def rpad(text: str, width: int) -> str:
+    trimmed = text[:width]
+    if len(trimmed) == width and width > 10:
+        trimmed = trimmed[:-3] + "..."
+    return trimmed.ljust(width)
 
 
 def optimize(d: Dict[str, float]) -> Dict[str, float]:
