@@ -1,10 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox as tkm
+from tkinter import filedialog as tkf
 from tkinter import font as tkFont
+import tkhtmlview as tkh
 from typing import Dict, Any, List, Optional
 
-from model import Invoice, Transaction
-from tools import stof, rmv_dups
+from .model import Invoice, Transaction
+from .tools import stof, rmv_dups, print_array
+from .globals import APP_DIR
 
 WIN_WIDTH = 600
 WIN_HEIGHT = 400
@@ -75,10 +79,12 @@ class MessageView(tk.Toplevel):
         super().__init__(parent, *args, **kwargs)
         self.parent = parent
         self.msg = tk.StringVar(self, message)
+        self.normal_font = tkFont.Font(**tkFont.nametofont('TkFixedFont').actual())
+        self.normal_font.config(size=9, weight=tkFont.NORMAL)
         
-        display_frame = VerticalScrolledFrame(self)
+        display_frame = VerticalScrolledFrame(self, width=580, height=500)
         button_frame = tk.Frame(self)
-        msg_label = tk.Label(display_frame.interior, anchor='nw', justify='left', textvariable=self.msg)
+        msg_label = tk.Label(display_frame.interior, anchor='nw', justify='left', textvariable=self.msg, font=self.normal_font)
         close_btn = tk.Button(button_frame, text='Close', command=lambda: self.destroy())
 
         display_frame.pack(side='top', fill='both', expand=True, padx=4, pady=4)
@@ -86,6 +92,10 @@ class MessageView(tk.Toplevel):
         msg_label.pack(side='top', fill='both', expand=True)
         close_btn.pack(side='right', fill='x', expand=True)
     
+    def add_msg(self, message: str = ''):
+        _msg = self.msg.get()
+        self.msg.set(_msg + '\n' + message)
+
     def show(self):
         center(self)
         self.resizable(False, False)
@@ -96,14 +106,6 @@ class MessageView(tk.Toplevel):
         self.wm_protocol('WM_DELETE_WINDOW', self.destroy)
         self.wait_window(self)
         return
-
-class InvoiceView(MessageView):
-    def __init__(self, parent, invoice: List[Transaction], *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.invoice = invoice
-        self.msg.set(
-            '\n'.join([f'{str(i).zfill(2)} : {t.descr}' for i, t in enumerate(self.invoice)])
-        )
 
 
 class PayerInputFrame(tk.Frame):
@@ -350,11 +352,17 @@ class BillListBox(VerticalScrolledFrame):
 
 class MainView(tk.Frame):
     _state: int
+    _loaded: bool
+    _edited: bool
+    filepath: Optional[str]
     invoice: Invoice
     sv_bill: tk.StringVar
     def __init__(self, parent: tk.Tk):
         super().__init__(parent)
         self._state = 0
+        self._loaded = False
+        self._edited = False
+        self.filepath = None
         self.parent = parent
         self.invoice = Invoice()
         
@@ -363,6 +371,17 @@ class MainView(tk.Frame):
         self.update_ui()
 
     def init_ui(self):
+        # Menu setup
+        menubar = tk.Menu(self.parent)
+        self.parent.config(menu=menubar)
+        filemenu = tk.Menu(menubar, tearoff=False)
+        filemenu.add_command(label='New', command=self.do_new, underline=0)
+        filemenu.add_command(label='Open', command=self.do_open, underline=0)
+        filemenu.add_command(label='Save', command=self.do_save, underline=0)
+        filemenu.add_command(label='Close', command=self.do_close, underline=0)
+        menubar.add_cascade(label='File', menu=filemenu, underline=0)
+
+        # Widgets setup
         self.top = tk.Frame(self)
         self.ppl_lfm = tk.LabelFrame(self.top, text="Group")
         # TODO: Change ppl_disp from Label to Canvas to allow graphics
@@ -410,7 +429,6 @@ class MainView(tk.Frame):
                 self.invoice[selection] = new_trans
                 self._state = 1
             
-
     def del_btn_pressed(self):
         selection = self.bill_lbx.cur_selection.get()
         if selection >= 0:
@@ -422,14 +440,77 @@ class MainView(tk.Frame):
         self._state = 1
 
     def inv_btn_pressed(self):
-        iv = InvoiceView(self, self.invoice.invoice())
-        iv.show()
+        mv = MessageView(self)
+        mmsg = print_array(self.invoice.list_matrix(), 'c/cr', padx=2, top='F R O M', left='TO', header='Total Amount Owed')
+        mv.add_msg(mmsg)
+        amsg = print_array(self.invoice.list_all(), 'c/lr', footer='\n')
+        mv.add_msg(amsg)
+        for i, t in enumerate(self.invoice.invoice()):
+            mv.add_msg(f'{str(i).zfill(2)} : {t.descr}')
+        mv.show()
 
+    def do_new(self):
+        do_continue = tkm.askyesno(
+            title='Confirmation',
+            message='This will clear any unsaved progress. Do you wish to continue?',
+        )
+        if do_continue:
+            self._loaded = False
+            self._edited = False
+            self.filepath = None
+            self.clr_btn_pressed()
+
+    def do_save(self):
+        if not self._edited:
+            return
+
+        if self.filepath is None:
+            fpath = tkf.asksaveasfilename(parent=self, title='Save', initialdir=APP_DIR, filetypes=(('Save File', '*.gbs'),))
+            if not fpath.endswith('.gbs'):
+                fpath = fpath + '.gbs'
+            print(fpath)
+            self.filepath = fpath
+        print(self.invoice.save())
+        try:
+            with open(self.filepath, mode='w') as wf:
+                save_data = self.invoice.save()
+                wf.write(save_data)
+            self._edited = False
+        except OSError:
+            print('do_save: oserror')
+
+    def do_open(self):
+        if self._edited or self._loaded:
+            _msg = 'This will clear any unsaved progress. Do you wish to continue?'
+            if self._loaded:
+                _msg = 'This will clear the current bills. Do you with to continue?'
+            do_continue = tkm.askyesno(
+                title='Confirmation',
+                message=_msg,
+            )
+            if not do_continue:
+                return
+        fpath = tkf.askopenfilename(parent=self, title='Open', initialdir=APP_DIR, filetypes=(('Save File', '*.gbs'),))
+        try:
+            with open(fpath, mode='r') as rf:
+                load_data = '\n'.join(rf.readlines())
+            if self.invoice.load(load_data):
+                self._edited = False
+                self._loaded = True
+                self.filepath = fpath
+                self._state = 1
+        except OSError:
+            print('do_open: oserror')
+                
+
+    def do_close(self):
+        pass
 
     def update_ui(self):
         if self._state == 1:
             self.ppl_disp.config(text=','.join(self.invoice.get_payers()))
             self.bill_lbx.set_list(self.invoice.trans)
+            self._edited = True
             self._state = 0
         self.after(50, self.update_ui)
 
