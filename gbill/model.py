@@ -2,7 +2,7 @@ from typing import Optional, Union, List, Dict, Any, Tuple
 import json
 from json import JSONDecodeError
 
-from .tools import ftoc, log10, rpad
+from .tools import ftoc, log10
 from .exceptions import UnequalDistributionError, UnevenDistributionError
 
 
@@ -114,7 +114,7 @@ class Invoice():
         return ret_list
 
 
-    def list_all(self, show_detail: bool = False) -> List[List[str]]:
+    def list_all(self) -> List[List[str]]:
         """Return a list of all transaction in formatted string.
 
         Parameter:
@@ -123,32 +123,27 @@ class Invoice():
         _header = self.get_payers()
         _array = self.get_array()
         ret_list = []
-        h = ['Payee', *_header, 'Subtotal']
-        if show_detail:
-            h.insert(1, 'Desc'.center(20))
+        h = ['Payee', 'Desc', *_header, 'Subtotal']
         ret_list.append(h)
         
         m = len(_array[0])
         total = [0.0] * m
         for i, a in enumerate(_array):
             el = [
-                self.trans[i].payee, 
+                self.trans[i].payee,
+                self.trans[i].descr,
                 *("{:.2f}".format(_) for _ in a), 
                 "{:.2f}".format(sum(a))
             ]
-            if show_detail:
-                el.insert(1, rpad(self.trans[i].descr, 20))
             ret_list.append(el)
             for j, _ in enumerate(a):
                 total[j] += _
         footer = [
+            '',
             'Total',
             *["{:.2f}".format(_) for _ in total],
             "{:.2f}".format(sum(total))
         ]
-        if show_detail:
-            footer[0] = ''
-            footer.insert(1, 'Total'.rjust(20))
         ret_list.append(footer)
         return ret_list
 

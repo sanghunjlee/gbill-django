@@ -3,10 +3,11 @@ from tkinter import ttk
 from tkinter import messagebox as tkm
 from tkinter import filedialog as tkf
 from tkinter import font as tkFont
+import tkhtmlview as tkh
 from typing import Dict, Any, List, Optional
 
 from .model import Invoice, Transaction
-from .tools import stof, rmv_dups
+from .tools import stof, rmv_dups, print_array
 from .globals import APP_DIR
 
 WIN_WIDTH = 600
@@ -440,10 +441,10 @@ class MainView(tk.Frame):
 
     def inv_btn_pressed(self):
         mv = MessageView(self)
-        mv.add_msg('\n'.join(['\t'.join(a) for a in self.invoice.list_matrix()]))
-        mv.add_msg()
-        mv.add_msg('\n'.join(['\t'.join(a) for a in self.invoice.list_all(True)]))
-        mv.add_msg()
+        mmsg = print_array(self.invoice.list_matrix(), 'c/cr', padx=2, top='F R O M', left='TO', header='Total Amount Owed')
+        mv.add_msg(mmsg)
+        amsg = print_array(self.invoice.list_all(), 'c/lr', footer='\n')
+        mv.add_msg(amsg)
         for i, t in enumerate(self.invoice.invoice()):
             mv.add_msg(f'{str(i).zfill(2)} : {t.descr}')
         mv.show()
