@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import font as tkFont
 
-from ..tools.tools import center
+from .window import Window
 
-class MessageView(tk.Toplevel):
+class MessageView(Window):
     def __init__(self, parent, message: str = '', *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+        #self.resizable(False, False)
         self.parent = parent
         self.normal_font = tkFont.Font(**tkFont.nametofont('TkFixedFont').actual())
         self.normal_font.config(size=9, weight=tkFont.NORMAL, slant=tkFont.ROMAN)
@@ -66,14 +67,3 @@ class MessageView(tk.Toplevel):
         if bucket != '':
             self.display.insert('end', bucket, afont[0])
         self.display.config(state='disabled')
-
-    def show(self):
-        center(self)
-        #self.resizable(False, False)
-        self.wm_transient(self.parent)
-        self.grab_set()
-        self.focus_set()
-        self.deiconify()
-        self.wm_protocol('WM_DELETE_WINDOW', self.destroy)
-        self.wait_window(self)
-        return

@@ -198,4 +198,3 @@ if __name__ == '__main__':
     inv = m.invoice()
     print(inv)
     print(m.get_payers())
-

@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 import tkinter as tk
-from tkinter import ttk
 from tkinter import messagebox as tkm
 from tkinter import filedialog as tkf
-from tkinter import font as tkFont
-from typing import Dict, Any, List, Optional
+from typing import Optional
 
 from .bill_list_box import BillListBox
 from .message_view import MessageView
 from .trans_input_view import TransInputView
 
-from ..model.invoice import Invoice, Transaction
-from ..tools.tools import stof, rmv_dups, print_array
+from ..model.invoice import Invoice
+from ..tools.tools import print_array
 from ..globals import APP_DIR
 
 WIN_WIDTH = 600

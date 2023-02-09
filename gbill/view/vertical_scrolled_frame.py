@@ -51,7 +51,7 @@ class VerticalScrolledFrame(ttk.Frame):
                 #print('canvas', self.canvas.winfo_width())
                 self.canvas.itemconfigure(interior_id, width=self.canvas.winfo_width())
         self.canvas.bind('<Configure>', _configure_canvas)
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.canvas.bind("<MouseWheel>", self._on_mousewheel)
 
     def _on_mousewheel(self, event):
         if self.interior.winfo_reqheight() > self.canvas.winfo_height():

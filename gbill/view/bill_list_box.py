@@ -33,6 +33,7 @@ class BillListBox(VerticalScrolledFrame):
                 f'BTN{indx}', 
                 tk.Button(self.interior, anchor='w', text=_txt, padx=4, pady=4, command=lambda i=indx: self.btn_pressed(i))
             )
+            self.__getattribute__(f'BTN{indx}').bind("<MouseWheel>", self._on_mousewheel)
             self.__getattribute__(f'BTN{indx}').pack(side=tk.TOP, fill=tk.X, expand=True, pady=1)
 
     def set_list(self, listvariable: List[Any]):
