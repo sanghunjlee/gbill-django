@@ -1,4 +1,4 @@
 /.venv
 /.vscode
-gbill/__pycache__
+**/__pycache__
 gbill_*

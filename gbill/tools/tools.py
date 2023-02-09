@@ -1,6 +1,24 @@
 from typing import Dict, List, Any
 import math
 
+def center(win):
+    """
+    centers a tkinter window
+    :param win: the main window or Toplevel window to center
+    """
+    win.update_idletasks()
+    width = win.winfo_width()
+    frm_width = win.winfo_rootx() - win.winfo_x()
+    win_width = width + 2 * frm_width
+    height = win.winfo_height()
+    titlebar_height = win.winfo_rooty() - win.winfo_y()
+    win_height = height + titlebar_height + (height // 1.5)
+
+    x = win.winfo_screenwidth() // 2 - win_width // 2
+    y = win.winfo_screenheight() // 2 - win_height // 2
+    win.geometry('+{}+{}'.format(int(x), int(y)))
+    win.deiconify()
+
 def stof(str_val: str) -> float:
     if type(str_val) is str:
         _ = ''.join([_ for _ in str_val.replace(',', '') if _.isnumeric() or _ == '.'])
@@ -67,7 +85,7 @@ def cpad(text: str, width: int, multiline: bool = False) -> str:
 
 def print_array(
     arr: List[List[Any]], _format: str = 'r', padx: int = 1, pady: int = 0,
-    header: str = '', footer: str = '',
+    title: str = '', footer: str = '',
     top: str = '', left: str = '', right: str = '', bottom: str = ''
 ) -> str:
     """Format array (n x m matrix) into a string.
@@ -122,12 +140,12 @@ def print_array(
     printout = tprint + '\n' + printout + '\n' + bprint
 
     # Adding header & footer
-    if header != '':
-        header = cpad(header, width + lwidth + rwidth, True) + '\n\n'
+    if title != '':
+        title = cpad(title, width + lwidth + rwidth, True) + '\n\n'
     if footer != '':
         footer = '\n\n' + cpad(footer, width + lwidth + rwidth, True)
 
-    printout = header + printout + footer
+    printout = title + printout + footer
 
     return printout
 
