@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from typing import Optional, List
 
-from ..model.invoice import Transaction
+from ..model.transaction import Transaction
 from ..tools.tools import rmv_dups,stof, center
 from .payer_input_frame import PayerInputFrame
 
