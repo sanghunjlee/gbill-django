@@ -55,4 +55,6 @@ And thus, we conclude there is no discrepancy for method 2 despite at a glance i
 
 ## Future Updates
 - [ ] CLI Feature
+- [ ] Convert tkinter gui to flask
+- [ ] Implement Docker
 - [ ] Export result as PDF, PNG, and TXT
