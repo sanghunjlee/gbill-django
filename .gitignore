@@ -1,8 +1,13 @@
+# env
 /.venv
 /.vscode
 **/__pycache__
-gbill_*
+
+# build
 *.egg-info
 /build
 /dist
+
+# archives
 README_*.md
+gbill_*
