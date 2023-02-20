@@ -1,0 +1,85 @@
+{% load static %}
+
+<html lang="en-US">
+    
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" />
+
+        <link rel="stylesheet" href="{% static 'gbill/style.css' %}">
+
+        <title>Dashboard | gBill</title>
+
+    </head>
+
+    <body>
+        <div class="cdiv">
+            <div class="ddiv"> 
+                <div class="title">
+                    <div style="flex:100;"> gBill </div>
+                </div> 
+            </div>
+            <div class="ddiv">
+                <div id="group">
+                    <div class="title">
+                        <div style="flex:20;"> </div>
+                        <div style="flex:60;"> Group </div>
+                        <div style="flex:20;">
+                            <form  action="{% url 'gbill:person_clear' %}" method="get">
+                                {% csrf_token %}
+                            <input type="submit" name="clear_group" id="clear-btn" value="clear"> 
+                            </form>
+                        </div>
+                    </div>
+                    <hr>
+                    <div id="persons">
+                    {% for person in person_list %}
+                        <a id="plink" href={% url "gbill:person_delete" person.id %}>
+                            <div id="person">
+                                {{ person }}
+                            </div>
+                        </a>
+                    {% endfor %}
+                    <form method="post" style="margin:0px;">
+                    {% csrf_token %}
+                        <div>
+                        {{ personForm.name }}
+                        </div>
+                    </form>
+                    </div>
+                </div>      
+            </div>
+            <div class="ddiv">
+                <div class="title"> 
+                    <div style="flex:20;"> </div>
+                    <div style="flex:60;"> Transactions </div>
+                    <div style="flex:20;">
+                        <form  action="{% url 'gbill:bill_clear' %}" method="get">
+                            {% csrf_token %}
+                        <input type="submit" name="clear_bill" id="clear-btn" value="clear"> 
+                        </form>
+                    </div>
+                </div>
+                <div id="bill-header">
+                    <div id="bill-desc">Description</div>
+                    <div id="bill-payee">Payee</div>
+                    <div id="bill-amount">Amount</div>
+                </div>
+                <hr>
+            {% for bill in bill_list %}
+                <a id="blink" href={% url "gbill:detail" bill.id %} >
+                    <div id="bill">
+                        <div id="bill-desc">{{ bill.desc }}</div>
+                        <div id="bill-payee">{{ bill.payee }}</div>
+                        <div id="bill-amount">{{ bill.amount }}</div>
+                    </div>
+                </a>
+            {% endfor %}
+                <form  action="{% url 'gbill:bill_add' %}" method="get">
+                    {% csrf_token %}
+                    <input type="submit" value="Add New Bill" id="add-new-bill">
+                </form>
+            </div>
+        </div>
+    </body>
+</html>

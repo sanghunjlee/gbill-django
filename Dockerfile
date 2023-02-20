@@ -1,4 +1,4 @@
-FROM python:3.10-windowsservercore
+FROM python:3.8-slim
 
 WORKDIR /app
 
@@ -6,4 +6,4 @@ RUN python -m pip install --upgrade pip
 
 COPY . .
 
-CMD ["python", "-m", "gbill"]
+CMD ["python", "manage.py", "runserver"]
