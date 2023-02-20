@@ -3,6 +3,11 @@
 /.vscode
 **/__pycache__
 
+# django
+/proj
+/static
+db.sqlite3
+
 # build
 *.egg-info
 /build

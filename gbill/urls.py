@@ -1,21 +1,19 @@
-"""gbill URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin
 from django.urls import path
 
+from . import views
+
+app_name = 'gbill'
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', views.IndexView.as_view(), name='index'),
+    # path('add/<int:bill_id>/', views.add, name='add'),
+    path('bills/<int:pk>/', views.BillView.as_view(), name='detail'),
+    path('bills/add/', views.BillCreateView.as_view(), name='bill_add'),
+    # path('bills/<int:pk>/update/', views.BillUpdateView.as_view(), name='bill-update'),
+    path('bills/delete/<int:pk>/', views.delete_bill, name='bill_delete'),
+    path('bills/clear/', views.clear_bills, name='bill_clear'),
+    path('person/<int:pk>', views.PersonView.as_view(), name='person'),
+    path('person/add/', views.PersonAddView.as_view(), name='person_add'),
+    path('person/delete/<int:pk>/', views.delete_person, name='person_delete'),
+    path('person/clear/', views.clear_persons, name='person_clear')
+
 ]
