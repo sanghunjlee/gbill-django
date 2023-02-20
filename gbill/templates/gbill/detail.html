@@ -1,0 +1,71 @@
+{% load static %}
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" />
+
+    <link rel="stylesheet" href="{% static 'gbill/style.css' %}" />
+
+    <title>Detail | gBill</title>
+  </head>
+
+  <body>
+    <div class="cdiv">
+      <div class="ddiv">
+        <div class="title">
+          <div style="flex:20">
+            <form action="{% url 'gbill:index' %}" method="get">
+              <input type="submit" name="back" value="Back" />
+            </form>
+          </div>
+          <div style="flex:40">
+            {{ form.desc }}
+          </div>
+          <div style="flex:20">
+            <input type="submit" name="edit" value="Edit" />
+          </div>
+          <div style="flex:20">
+            <form action="{% url 'gbill:bill_delete' bill.id %}" method="get">
+              <input type="submit" value="Delete">
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="ddiv"
+        <form method="post">
+          {% csrf_token %}
+          <div style="margin-bottom: 8px; overflow: auto">
+            <fieldset style="float: left">
+              <legend>Payee</legend>
+              {{ form.payee }}
+            </fieldset>
+            <fieldset style="float: right">
+              <legend>Amount</legend>
+              {{ form.amount }}
+            </fieldset>
+          </div>
+          <fieldset>
+            <legend>Items</legend>
+            {{ formset.management_form }}
+            <div>
+              {% for f in formset.forms %}
+              <div class="ff">
+                <div class="f-id">{{ f.id }}</div>
+                <div class="f-person">{{ f.person.label }} {{ f.person }}</div>
+                <div class="f-amount">{{ f.amount.label }} {{ f.amount }}</div>
+                <div class="f-delete">{{ f.DELETE }}</div>
+              </div>
+              {% endfor %}
+            </div>
+            <input
+              type="submit"
+              name="add_new_item"
+              value="Add New Item"
+              id="add-new-item"
+            />
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+{% load static %}
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" />
+
+    <link rel="stylesheet" href="{% static 'gbill/style.css' %}" />
+
+    <title>Detail | gBill</title>
+  </head>
+
+  <body>
+    <div class="cdiv">
+      <form method="post">
+        {% csrf_token %}
+        <div class="ddiv">
+          <div class="title">
+            <div style="flex: 60"></div>
+            <div style="flex: 20">
+              <input type="submit" name="save" value="Save" />
+            </div>
+            <div style="flex: 20">
+              <input type="submit" name="cancel" value="Cancel" />
+            </div>
+          </div>
+        </div>
+        <div class="ddiv">
+          <fieldset>
+            <legend>Description</legend>
+            {{ form.desc }}
+          </fieldset>
+        </div>
+        <div class="ddiv">
+          <div class="fdiv">
+            <div>
+              <fieldset>
+                <legend>Payee</legend>
+                {{ form.payee }}
+              </fieldset>
+            </div>
+            <div>
+              <fieldset style="float: right">
+                <legend>Amount</legend>
+                {{ form.amount }}
+              </fieldset>
+            </div>
+          </div>
+        </div>
+        <div class="ddiv">
+          <fieldset>
+            <legend>Items</legend>
+            {{ formset.management_form }}
+            <div>
+              {% for f in formset.forms %}
+              <div class="ff">
+                <div class="f-id">{{ f.id }}</div>
+                <div class="f-person">{{ f.person.label }} {{ f.person }}</div>
+                <div class="f-amount">{{ f.amount.label }} {{ f.amount }}</div>
+                <div class="f-delete">{{ f.DELETE }}</div>
+              </div>
+              {% endfor %}
+            </div>
+            <input
+              type="submit"
+              name="add_new_item"
+              value="Add New Item"
+              id="add-new-item"
+            />
+          </fieldset>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

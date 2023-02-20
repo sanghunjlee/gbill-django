@@ -1,8 +1,18 @@
+# env
 /.venv
 /.vscode
 **/__pycache__
-gbill_*
+
+# django
+/proj
+/static
+db.sqlite3
+
+# build
 *.egg-info
 /build
 /dist
+
+# archives
 README_*.md
+gbill_*
