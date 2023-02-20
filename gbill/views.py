@@ -96,12 +96,13 @@ class BillCreateView(generic.FormView):
             formset_valid = formset.is_valid()
             print(form_valid, formset_valid)
             if form_valid and formset_valid:
-                bill = Bill.objects.create(form.cleaned_data)
-                fk = bill.id
+                bill_data = form.cleaned_data
+                bill = Bill.objects.create(**bill_data)
                 for f in formset:
                     data = f.cleaned_data
                     data['bill'] = bill
-                    Item.objects.create(data)
+                    data.pop('DELETE')
+                    Item.objects.create(**data)
                 return HttpResponseRedirect(reverse('gbill:index'))
         
         if "add_new_item" in request.POST:
