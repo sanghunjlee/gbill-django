@@ -1,4 +1,3 @@
-# env
 /.venv
 /.vscode
 **/__pycache__
@@ -12,7 +11,4 @@ db.sqlite3
 *.egg-info
 /build
 /dist
-
-# archives
 README_*.md
-gbill_*
