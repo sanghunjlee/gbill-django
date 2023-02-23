@@ -34,11 +34,9 @@
                     <hr>
                     <div id="persons">
                     {% for person in person_list %}
-                        <a id="plink" href={% url "gbill:person_delete" person.id %}>
-                            <div id="person">
-                                {{ person }}
-                            </div>
-                        </a>
+                    <form action="{% url 'gbill:person_delete' person.id %}" method="get"> {% csrf_token %}
+                        <input type="submit" id="person" value={{ person }}>
+                    </form>
                     {% endfor %}
                     <form method="post" style="margin:0px;">
                     {% csrf_token %}
@@ -60,6 +58,14 @@
                         </form>
                     </div>
                 </div>
+                
+                <div class="error-msgs">
+                {% if messages %}
+                    {% for message in messages %}
+                    <span{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</span>
+                    {% endfor %}
+                {% endif %}
+                </div>
                 <div id="bill-header">
                     <div id="bill-desc">Description</div>
                     <div id="bill-payee">Payee</div>
@@ -75,9 +81,9 @@
                     </div>
                 </a>
             {% endfor %}
-                <form  action="{% url 'gbill:bill_add' %}" method="get">
+                <form method="post">
                     {% csrf_token %}
-                    <input type="submit" value="Add New Bill" id="add-new-bill">
+                    <input type="submit" value="Add New Bill" id="add-new-bill" name="add_new_bill">
                 </form>
             </div>
         </div>

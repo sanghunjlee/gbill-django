@@ -1,7 +1,7 @@
 from django import forms
 
 from .models import Bill, Item, Person
-from .widgets import ButtonWidget
+from .widgets import ButtonWidget, ListTextWidget
 
 class DetailForm(forms.ModelForm):
     
@@ -39,12 +39,11 @@ class ItemForm(forms.ModelForm):
 
         widgets = {
             'person': forms.Select(attrs={'class': 'person-select'}),
-            'amount': forms.NumberInput(attrs={'class': 'number-form', 'step': '1', 'min': '0'}),
-            'DELETE': ButtonWidget(attrs={'class': 'del-btn', 'value': 'Delete'})
+            'amount': forms.NumberInput(attrs={'class': 'number-form', 'step': '0.01', 'min': '0'}),
         }
 
-class IndexPersonForm(forms.ModelForm):
 
+class IndexPersonForm(forms.ModelForm):
     class Meta:
         model = Person
         fields = ('name',)
@@ -55,6 +54,12 @@ class IndexPersonForm(forms.ModelForm):
     }))
 
 class BaseItemFormSet(forms.BaseInlineFormSet):
+    deletion_widget = ButtonWidget(attrs={
+        'value': 'Delete', 
+        'class': 'form-control'
+    })
+
+class BaseInlineItemFormSet(forms.BaseInlineFormSet):
     deletion_widget = ButtonWidget(attrs={
         'value': 'Delete', 
         'class': 'form-control'

@@ -3,7 +3,7 @@
 **/__pycache__
 
 # django
-/proj
+/project
 /static
 db.sqlite3
 

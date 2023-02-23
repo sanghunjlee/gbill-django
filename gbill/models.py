@@ -40,6 +40,7 @@ class Item(models.Model):
     person = models.ForeignKey(Person, default=1, on_delete=models.PROTECT)
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE)
     amount = models.DecimalField(default=0, max_digits=10, decimal_places=2)
+    is_deleted = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return "{0} - {1} ({2}{3:.2f})".format(self.bill, self.person, "-$" if self.amount < 0 else "$", self.amount)
+        return f"Item ({self.pk}) - {self.bill} ({self.amount}) {'(DELETED)' if self.is_deleted else ''}"

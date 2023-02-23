@@ -1,14 +1,15 @@
-from django.shortcuts import get_list_or_404, get_object_or_404, render
+from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, formset_factory
 
 from .models import Bill, Item, Person
-from .forms import DetailForm, BillForm, ItemForm, IndexPersonForm, BaseItemFormSet
+from .forms import DetailForm, BillForm, ItemForm, IndexPersonForm, BaseItemFormSet, BaseInlineItemFormSet
 
+ExisitngItemFormSet = inlineformset_factory(Bill, Item, form=ItemForm, formset=BaseInlineItemFormSet, extra=0)
 ItemFormSet = inlineformset_factory(Bill, Item, form=ItemForm, formset=BaseItemFormSet, extra=0)
-ItemCreateFormSet = inlineformset_factory(Bill, Item, form=ItemForm, formset=BaseItemFormSet, extra=0)
+ItemCreateFormSet = inlineformset_factory(Bill, Item, form=ItemForm, formset=BaseInlineItemFormSet, extra=0)
 
 # Create your views here.
 class IndexView(generic.ListView):
@@ -16,10 +17,16 @@ class IndexView(generic.ListView):
     context_object_name = "bill_list"
 
     def post(self, request, **kwargs):
+        print('post')
         for k,v in request.POST.items():
             print(k, ': ', v)
-        
-        if "name" in request.POST:
+        if "add_new_bill" in request.POST:
+            persons = Person.objects.all()
+            if len(persons) < 1:
+                messages.error(request, 'You need at least 1 person in the group to create a bill.')
+            else:
+                return HttpResponseRedirect(reverse("gbill:bill_add"))
+        elif "name" in request.POST:
             print("name inputted")
             form = IndexPersonForm(request.POST)
             if form.is_valid():
@@ -49,34 +56,97 @@ class BillView(generic.DetailView):
     template_name = "gbill/detail.html"
     
     def get(self, request, *args, **kwargs):
+        print('get')
         self.object = self.get_object()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
     
     def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        
+        if "back" in request.POST:
+            for deleted_item in Item.objects.filter(is_deleted=True):
+                deleted_item.is_deleted = False
+                deleted_item.save()
+            return HttpResponseRedirect(reverse("gbill:index"))
+
+        if "save" in request.POST:
+            Item.objects.filter(bill=self.object, is_deleted=True).delete()
+
+            form = self.form_class(request.POST)
+            ex_formset = ExisitngItemFormSet(request.POST, prefix="ex-item")
+            formset = ItemFormSet(request.POST)
+
+            form_valid = form.is_valid()
+            ex_formset_valid = ex_formset.is_valid()
+            formset_valid = formset.is_valid()
+            
+            if form_valid and ex_formset_valid and formset_valid:
+                bill_data = form.cleaned_data
+                for k, v in bill_data.items():
+                    if hasattr(self.object, k):
+                        setattr(self.object, k, v)
+                self.object.save()
+
+                for ex_f in ex_formset:
+                    ex_data = ex_f.cleaned_data
+                    ex_item = ex_data.pop('id')
+                    ex_data.pop('bill')
+                    for k, v in ex_data.items():
+                        if hasattr(ex_item, k):
+                            setattr(ex_item, k, v)
+                    ex_item.save(update_fields=['person', 'amount'])
+
+                for f in formset:
+                    data = f.cleaned_data
+                    data['bill'] = self.object
+                    data.pop('DELETE')
+                    Item.objects.create(**data)
+
+            return self.get(request, *args, **kwargs)
+
+        if 'delete' in request.POST:
+            self.object.delete()
+            return HttpResponseRedirect(reverse('gbill:index'))
+
         if "add_new_item" in request.POST:
-            Item(
-                person=Person.objects.get(pk=1), 
-                bill=Bill.objects.get(pk=kwargs['pk']), 
-                amount=0
-            ).save()
-            context = self.get_context_data(**kwargs)
-            return self.render_to_response(context)
-        elif "Delete" in request.POST.values():
-            for k, v in request.POST.items():
-                if "Delete" in v:
-                    id_name = k.replace("-DELETE","-id")
-                    break
-            fk = request.POST.get(id_name)
-            Item.objects.get(pk=fk).delete()
-            context = self.get_context_data(**kwargs)
-            return self.render_to_response(context)
+            ItemFormSet.extra += 1
+        
+        ex_formset = ExisitngItemFormSet(request.POST, prefix='ex-item')
+        if ex_formset.is_valid():
+            for data in ex_formset.cleaned_data:
+                if data['DELETE'] is True:
+                    data['id'].is_deleted = True
+                    data['id'].save()
+        formset = ItemFormSet(request.POST)
+        if formset.is_valid():
+            data = formset.cleaned_data
+            pop_id = None
+            for i in range(len(data)):
+                if data[i]['DELETE'] is True:
+                    pop_id = i
+                else:
+                    data[i]['DELETE'] = 'Delete'
+            if pop_id is not None:
+                data.pop(pop_id)
+                ItemFormSet.extra -= 1
+            formset = ItemFormSet(initial=data)
+        else:
+            formset = ItemFormSet()
+        
+        context = self.get_context_data(**kwargs)
+        context['formset'] = formset
+        return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
         context = super(BillView, self).get_context_data(**kwargs)
-        bill = self.get_object()
-        context['form'] = DetailForm(instance=bill)
-        context['formset'] = ItemFormSet(instance=bill)
+        context['form'] = self.form_class(instance=self.object)
+        context['existingFormset'] = ExisitngItemFormSet(
+            prefix='ex-item',
+            instance=self.object,
+            queryset=Item.objects.filter(is_deleted=False)
+        )
+        context['formset'] = ItemFormSet()
         return context
 
 class BillCreateView(generic.FormView):

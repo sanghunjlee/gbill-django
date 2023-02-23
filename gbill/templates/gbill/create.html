@@ -5,6 +5,7 @@
     <meta name="viewport" />
 
     <link rel="stylesheet" href="{% static 'gbill/style.css' %}" />
+    <script src="{% static 'script.js' %}"></script>
 
     <title>Detail | gBill</title>
   </head>
@@ -35,7 +36,9 @@
             <div>
               <fieldset>
                 <legend>Payee</legend>
+                <div>
                 {{ form.payee }}
+                </div>
               </fieldset>
             </div>
             <div>
