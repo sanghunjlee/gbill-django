@@ -5,6 +5,9 @@ from django.urls import reverse
 class Person(models.Model):
     """Field(s): name"""
     name = models.CharField(max_length=50)
+    
+    class Meta:
+        ordering = ['name']
 
     def __str__(self) -> str:
         return self.name
