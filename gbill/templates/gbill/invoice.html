@@ -1,0 +1,36 @@
+{% load static %}
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" />
+
+    <link rel="stylesheet" href="{% static 'gbill/style.css' %}" />
+    <script src="{% static 'script.js' %}"></script>
+
+    <title>Invoice | gBill</title>
+  </head>
+
+  <body>
+    <div class="cdiv">
+      <div class="ddiv">
+        <div class="title">
+          <div style="flex: 20">
+            <form method="post">
+              {% csrf_token %}
+              <input type="submit" name="back" value="Back" />
+            </form>
+          </div>
+          <div style="flex: 60">Invoice</div>
+          <div style="flex: 20"></div>
+        </div>
+      </div>
+      <div class="ddiv">
+        <div class="invoice-msgs">
+          {% if invoice %} {% for step in invoice %}
+          <div class="invoice-step">{{ step }}</div>
+          {% endfor %} {% endif %}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

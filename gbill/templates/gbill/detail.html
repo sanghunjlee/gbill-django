@@ -6,34 +6,30 @@
 
     <link rel="stylesheet" href="{% static 'gbill/style.css' %}" />
 
-    <title>Detail | gBill</title>
+    <title>{{ bill }} | gBill</title>
   </head>
 
   <body>
     <div class="cdiv">
-      <div class="ddiv">
-        <div class="title">
-          <div style="flex:20">
-            <form action="{% url 'gbill:index' %}" method="get">
+      <form method="post">
+        {% csrf_token %}
+        <div class="ddiv">
+          <div class="title">
+            <div style="flex: 20">
               <input type="submit" name="back" value="Back" />
-            </form>
-          </div>
-          <div style="flex:40">
-            {{ form.desc }}
-          </div>
-          <div style="flex:20">
-            <input type="submit" name="edit" value="Edit" />
-          </div>
-          <div style="flex:20">
-            <form action="{% url 'gbill:bill_delete' bill.id %}" method="get">
-              <input type="submit" value="Delete">
-            </form>
+            </div>
+            <div style="flex: 40">
+              {{ form.desc }}
+            </div>
+            <div style="flex: 20">
+              <input type="submit" name="save" value="Save" />
+            </div>
+            <div style="flex: 20">
+              <input type="submit" name="delete" value="Delete" />
+            </div>
           </div>
         </div>
-      </div>
-      <div class="ddiv"
-        <form method="post">
-          {% csrf_token %}
+        <div class="ddiv">
           <div style="margin-bottom: 8px; overflow: auto">
             <fieldset style="float: left">
               <legend>Payee</legend>
@@ -46,8 +42,23 @@
           </div>
           <fieldset>
             <legend>Items</legend>
-            {{ formset.management_form }}
             <div>
+              <div class="ff-header">
+                <div class="f-person"> Person </div>
+                <div class="f-amount"> Amount </div>
+                <div class="f-delete"> Delete </div>
+              </div>
+              <hr>
+              {{ existingFormset.management_form }}
+              {% for f in existingFormset.forms %}
+              <div class="ff">
+                <div class="f-id">{{ f.id }}</div>
+                <div class="f-person">{{ f.person }}</div>
+                <div class="f-amount">{{ f.amount }}</div>
+                <div class="f-delete">{{ f.DELETE }}</div>
+              </div>
+              {% endfor %}
+              {{ formset.management_form }}
               {% for f in formset.forms %}
               <div class="ff">
                 <div class="f-id">{{ f.id }}</div>
@@ -57,6 +68,7 @@
               </div>
               {% endfor %}
             </div>
+            <hr>
             <input
               type="submit"
               name="add_new_item"
@@ -64,8 +76,8 @@
               id="add-new-item"
             />
           </fieldset>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </body>
 </html>
