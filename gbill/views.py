@@ -38,9 +38,8 @@ class IndexView(generic.ListView):
             print("name inputted")
             form = IndexPersonForm(request.POST)
             if form.is_valid():
-                name = form.cleaned_data['name']
-                p = Person(name=name)
-                print(p.__dict__)
+                _name = form.cleaned_data['name']
+                Person.objects.create(name = _name)
 
                 self.object_list = self.get_queryset()
                 context = self.get_context_data()
