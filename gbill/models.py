@@ -4,7 +4,7 @@ from django.urls import reverse
 # Create your models here.
 class Person(models.Model):
     """Field(s): name"""
-    name = models.CharField(max_length=50)
+    name = models.CharField(default="", max_length=50)
     
     class Meta:
         ordering = ['name']

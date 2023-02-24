@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
@@ -23,16 +24,23 @@ class IndexView(generic.ListView):
         if "add_new_bill" in request.POST:
             persons = Person.objects.all()
             if len(persons) < 1:
-                messages.error(request, 'You need at least 1 person in the group to create a bill.')
+                messages.error(
+                    request=request, 
+                    message='You need at least 1 person in the group to create a bill.',
+                    extra_tags="index"
+                )
             else:
                 return HttpResponseRedirect(reverse("gbill:bill_add"))
+        
+        elif "invoice" in request.POST:
+            return HttpResponseRedirect(reverse("gbill:invoice"))
         elif "name" in request.POST:
             print("name inputted")
             form = IndexPersonForm(request.POST)
             if form.is_valid():
-                obj = Person()
-                obj.name = form.cleaned_data['name']
-                obj.save()
+                name = form.cleaned_data['name']
+                p = Person(name=name)
+                print(p.__dict__)
 
                 self.object_list = self.get_queryset()
                 context = self.get_context_data()
@@ -202,7 +210,6 @@ class BillCreateView(generic.FormView):
         context = super().get_context_data(**kwargs)
         return context
 
-
 def delete_bill(request, pk):
     Bill.objects.get(pk=pk).delete()
     return HttpResponseRedirect(reverse('gbill:index'))
@@ -228,24 +235,52 @@ def clear_persons(request):
     Person.objects.filter(bill__payee__isnull = True, item__person__isnull = True).delete()
     return HttpResponseRedirect(reverse('gbill:index'))
 
-""" 
-class BillCreateView(generic.CreateView):
-    model = Bill
-    fields = ['desc', 'payee', 'amount']
-    template_name = 'gbill/detail.html'
-    form_class = DetailForm
+def invoice(request):
+    if "back" in request.POST:
+        return HttpResponseRedirect(reverse("gbill:index"))
+    
+    invoice = []
 
-    def post(self, request, *args, **kwargs):
-        pass
+    # creating a cashflow of each person involved
+    cashflow = {}
+    for person in Person.objects.all():
+        balance = 0
+        for item in Item.objects.filter(person=person):
+            balance -= item.amount
+        for bill in Bill.objects.filter(payee=person):
+            balance += bill.amount
+        cashflow[person] = balance
 
+    
+    # min-max the cashflow as long as there is nonzero value in the cashflow vlaues
+    i = 0
+    while sum([abs(v) for v in cashflow.values()]) != 0:
+        print(i, "::" , cashflow)
+        most_neg = min(cashflow.values())
+        most_pos = max(cashflow.values())
+        lpayee = ""
+        lpayer = ""
+        for k,v in cashflow.items():
+            if v == most_pos:
+                lpayee = k
+            if v == most_neg:
+                lpayer = k
+            if lpayee != "" and lpayer != "":
+                break
+        payment = min(abs(most_neg), abs(most_pos))
+        new_lpayee_value = cashflow[lpayee] - payment
+        new_lpayer_value = cashflow[lpayer] + payment
+        if payment == 0 or len(str(payment % 1).replace(".", "")) > 3:
+            new_lpayee_value = 0
+            new_lpayer_value = 0
+        cashflow[lpayee] = new_lpayee_value
+        cashflow[lpayer] = new_lpayer_value
+        inv_desc = f'{lpayer} pays {str(payment)} to {lpayee}.'
+        invoice.append(inv_desc)
+        i += 1
 
-class BillUpdateView(generic.UpdateView):
-    model = Bill
-    fields = ['desc', 'payee', 'amount']
-    template_name = 'gbill/detail.html'
-    form_class = DetailForm
-
-class BillDeleteView(generic.DeleteView):
-    model = Bill
-    success_url = reverse_lazy('bill-list')
- """
+    return render(
+        request=request,
+        template_name='gbill/invoice.html',
+        context={'invoice': invoice}
+    )

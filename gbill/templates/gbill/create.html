@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'gbill/style.css' %}" />
     <script src="{% static 'script.js' %}"></script>
 
-    <title>Detail | gBill</title>
+    <title>Create new bill | gBill</title>
   </head>
 
   <body>
@@ -54,11 +54,17 @@
             <legend>Items</legend>
             {{ formset.management_form }}
             <div>
+              <div class="ff-header">
+                <div class="f-person"> Person </div>
+                <div class="f-amount"> Amount </div>
+                <div class="f-delete"> Delete </div>
+              </div>
+              <hr>
               {% for f in formset.forms %}
               <div class="ff">
                 <div class="f-id">{{ f.id }}</div>
-                <div class="f-person">{{ f.person.label }} {{ f.person }}</div>
-                <div class="f-amount">{{ f.amount.label }} {{ f.amount }}</div>
+                <div class="f-person">{{ f.person }}</div>
+                <div class="f-amount">{{ f.amount }}</div>
                 <div class="f-delete">{{ f.DELETE }}</div>
               </div>
               {% endfor %}
