@@ -194,6 +194,23 @@ div#bill-amount {
   width: 20%;
   text-align: right;
 }
+div.invoice-msgs {
+  display: grid;
+  justify-items: center;
+  padding: 4px;
+}
+div.invoice-step {
+  width: 95%;
+  border: 2px solid rgb(198, 198, 198);
+  background-color: white;
+  color: rgb(64, 64, 64);
+  padding: 4px;
+  margin: 2px;
+}
+div.invoice-step:hover {
+  scale: 1.01;
+  transition: all 0.5s ease-in-out
+}
 
 input {
   font-family: inherit;
@@ -340,6 +357,7 @@ span.error {
   -webkit-animation-fill-mode: forwards;
   animation-fill-mode: forwards;
 }
+
 
 html {
   color: rgb(64, 64, 64);

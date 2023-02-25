@@ -102,8 +102,8 @@
                 <div id="bill-amount">{{ bill.amount }}</div>
             </div>
         </a>
-        <hr>
         {% endfor %}
+        <hr>
         <form method="post">
           {% csrf_token %}
           <input
