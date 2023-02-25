@@ -161,6 +161,11 @@ class BillCreateView(generic.FormView):
     template_name = 'gbill/create.html'
     form_class = BillForm
 
+    def get(self, request, *args, **kwargs):
+        ItemCreateFormSet.extra = 0
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         if "cancel" in request.POST:
