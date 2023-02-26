@@ -55,7 +55,16 @@ And thus, we conclude there is no discrepancy for method 2 despite at a glance i
 
 ## To-Do's
 - [ ] CLI Feature
-- [x] Convert tkinter gui to ~~flask~~ django
-- ~~[ ] Implement Docker~~
+- [x] Convert tkinter gui to django
 - [ ] Export result as PDF, PNG, and TXT
 - [ ] Implement more graphs to show accounting data
+- [ ] Implement users & saving/loading & sharing bill info
+
+<details>
+<Summary>Trashed ideas</summary>
+
+    - Implement Docker
+    - Convert to Flask (instead of Django)
+
+
+</details>
