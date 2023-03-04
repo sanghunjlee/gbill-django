@@ -28,6 +28,10 @@ media
 *.py[cod] 
 *$py.class 
 
+# js
+node_modules
+package-lock.json
+
 # distribution / packaging
 .Python build/ 
 develop-eggs/ 

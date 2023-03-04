@@ -1,21 +1,42 @@
+function doOper(op, a, b) {
+    switch (op) {
+        case '+':
+            return (parseFloat(a) + parseFloat(b)).toFixed(4);
+        case '-':
+            return (parseFloat(a) - parseFloat(b)).toFixed(4);
+        case '*':
+            return (parseFloat(a) * parseFloat(b)).toFixed(4);
+        case '/':
+            return (parseFloat(a) / parseFloat(b)).toFixed(4);
+        default:
+            return null;
+    }
+}
 function doEval(s) {
-    const re_op = /[+-*/%]/;
-    const re_num = /[0-9.,]/;
-    const re_par = /[()]/;
-    const input = s.split("");
+    // Evaluate equations with operators: +, -, *, /
+    // Any other operator will cause incorrect calculation or an error
 
-    var result = "";
-    var bucket = new Array("", "");
-
-    for (let i = 0; i < input.length; i++) {
-        let c = input[i];
-        if (re_num.test(c)) bucket[1] += c;
-        else if (re_op.test(c)) bucket[0] = c;
-        else if (re_par.text(c)) bucket[1] = parseNest(input);
-
+    var numbers = s.split(new RegExp('[+-\/\*]'));
+    var operators = s.split(new RegExp('[0-9]'));
+    
+    while (true) {
+        let index = operators.findIndex(function (op) {
+            return op === '*' || op ==='/';
+        });
+        if (index == -1) {
+            index = operators.findIndex(function (op) {
+                return op === '+' || op === '-';
+            });
+        }
+        if (index == -1) {
+            break;
+        }
+        let result = doOper(operators[index], numbers[index-1], numbers[index]);
+        
     }
 
 }
+
 function evalInput(ele) {
     var inp_val = ele.value.replace(" ", "")
     var inp = inp_val.split("");
@@ -55,4 +76,8 @@ function evalInput(ele) {
         console.log(bucket);
         console.log(result);
     }
+}
+
+exports = {
+    doEval: doEval
 }
