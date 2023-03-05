@@ -41,7 +41,19 @@ function doEval(s) {
     return parseFloat(numbers.join('')).toFixed(3);
 }
 
-
+function autoCalc () {
+    const totalAmount = document.getElementById("total-amount").value;
+    const itemAmountDivs = document.getElementsByClassName("f-amount");
+    if (itemAmountDivs.length > 0) {
+        const autoAmount = (parseFloat(totalAmount) / (itemAmountDivs.length - 1 )).toFixed(2);
+        for (let itemAmountDiv of itemAmountDivs) {
+            let itemAmountElems = itemAmountDiv.getElementsByTagName("input");
+            if (itemAmountElems.length > 0) {
+                itemAmountElems[0].value = autoAmount;
+            }
+        }
+    }
+}
 
 exports._test = {
     doEval: doEval
