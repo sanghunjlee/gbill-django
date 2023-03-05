@@ -16,10 +16,12 @@ function doEval(s) {
     // Evaluate equations with operators: +, -, *, /
     // Any other operator will cause incorrect calculation or an error
 
-    var numbers = s.split(new RegExp('[+-\/\*]'));
-    var operators = s.split(new RegExp('[0-9]'));
+    var numbers = s.split(new RegExp('[\\+\\-\\/\\*]'));
+    var operators = s.split(new RegExp('[.0-9]')).filter(function (op) {
+        return op !== '';
+    });
     
-    while (true) {
+    while (operators.length > 0) {
         let index = operators.findIndex(function (op) {
             return op === '*' || op ==='/';
         });
@@ -31,53 +33,16 @@ function doEval(s) {
         if (index == -1) {
             break;
         }
-        let result = doOper(operators[index], numbers[index-1], numbers[index]);
-        
+        let result = doOper(operators[index], numbers[index], numbers[index+1]);
+        numbers[index] = result;
+        numbers.splice(index+1, 1);
+        operators.splice(index, 1);
     }
-
+    return parseFloat(numbers.join('')).toFixed(3);
 }
 
-function evalInput(ele) {
-    var inp_val = ele.value.replace(" ", "")
-    var inp = inp_val.split("");
-    var result = 0.0;
-    var bucket = new Array("", "");
-    for (let i = 0; i < inp.length; i++) {
-        const c = inp[i];
-        if (re_num.test(c)) {
-            bucket[0] += c;
-        } else if (re_op.test(c)) {
-            if (bucket[1].length == 0 && bucket[0].length > 0) {
-                result = parseFloat(bucket[0]);
-                bucket[0] = "";
-            } else if (bucket[1].length > 0) {
-                switch (bucket[1]) {
-                    case "%":
-                        bucket[0] = (parseFloat(bucket[0]) / 100);
-                        break;
-                    case "+":
-                        result += parseFloat(bucket[0]);
-                    case "-":
-                        result -= parseFloat(bucket[0]);
-                    case "*":
-                        result *= parseFloat(bucket[0]);
-                        break;
-                    case "/":
-                        result /= parseFloat(bucket[0]);
-                    default:
-                        bucket[0] = "";
-                        bucket[1] = "";
-                }
-            }
-            bucket[1] = c;
-        } else if (re_par.text(c)) {
 
-        }
-        console.log(bucket);
-        console.log(result);
-    }
-}
 
-exports = {
+exports._test = {
     doEval: doEval
 }
