@@ -4,6 +4,63 @@
 
 ---
 
+## Getting Started
+
+### Install required packages
+
+```bash
+pip install -r requirement.txt
+```
+
+### Set up the `SECRET_KEY`
+
+First, create a `.env` file in the root directory (same level as the `manage.py`)
+
+Access the Python interactive shell by running the following in the terminal
+
+```bash
+(env) $ python manage.py shell
+```
+
+In the shell, import the `get_random_secret_key()` function from `django.core.management.utils`
+
+```python
+>>> from django.core.management.utils import get_random_secret_key
+```
+
+Use the function to generate the secret key
+
+```python
+>>> get_random_secret_key()
+somerandomkeygenerated
+```
+
+Copy this secret key and set it as `SECRET_KEY` value in the `.env` file
+
+```env
+SECRET_KEY='somerandomkeygenerated'
+```
+
+### Start the development server
+
+Now you can run the development server by running the following
+
+```bash
+(env) $ python manage.py runserver
+```
+
+Optionally you can provide a specific port
+
+```bash
+(env) $ python manage.py runserver 8000
+```
+
+### Open the `/gbill` app
+
+Access the app by going to the `/gbill` page of the server. (e.g. http://localhost:8000/gbill)
+
+---
+
 ## Project Description
 
 This is an app designed to split bills amongst other people by using the **minimal** number of transactions. 
