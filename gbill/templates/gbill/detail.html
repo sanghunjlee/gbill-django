@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" />
 
-    <link rel="stylesheet" href="{% static 'gbill/style.css' %}" />
+    <link rel="stylesheet" href="{% static 'gbill/css/style.css' %}" />
 
     <title>{{ bill }} | gBill</title>
   </head>
@@ -39,6 +39,11 @@
               <legend>Amount</legend>
               {{ form.amount }}
             </fieldset>
+          </div>
+          <div class="inline">
+            <div id="auto-calc-container">
+              <button type="button" id="auto-calc" onClick="autoCalc()">Auto Calc</button>
+            </div>
           </div>
           <fieldset>
             <legend>Items</legend>
@@ -79,5 +84,6 @@
         </div>
       </form>
     </div>
+    <script src="{% static 'gbill/js/script.js' %}"></script>
   </body>
 </html>

@@ -127,6 +127,16 @@ div.title-right {
     flex: 30;
     min-width: fit-content;
 }
+div.inline {
+  width: 100%;
+  display: inline-block;
+  padding: 4px;
+  box-sizing: border-box;
+}
+div#auto-calc-container {
+  float: right;
+}
+
 div#persons {
   display: flex;
   flex-wrap: wrap;
@@ -367,15 +377,28 @@ body {
   font-family: Helvetica;
   background-color: rgb(64, 64, 64);
 }
-button {
-  width: 100%;
-  padding: 2px;
-  margin-top: 2px;
-  margin-bottom: 2px;
+button[type="button"] {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+  border-radius: 8px;
+  border: 2px solid rgb(64, 64, 64);
+  padding: 4px 8px;
+  background-color: white;
+  color: rgb(64, 64, 64);
+  transition: all 0.5s ease-in-out;
 }
+button[type="button"]:hover {
+  background-color: rgb(64, 64, 64);
+  color: white;
+  transition: all 0.5s ease-in-out;
+}
+button[type="button"]:focus {
+  border-color: aqua;
+  outline: none;
+}
+
+
 form {
   margin-bottom: 0px;
 }

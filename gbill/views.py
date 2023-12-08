@@ -186,7 +186,8 @@ class BillCreateView(generic.FormView):
                     data.pop('DELETE')
                     Item.objects.create(**data)
                 return HttpResponseRedirect(reverse('gbill:index'))
-        
+
+
         if "add_new_item" in request.POST:
             ItemCreateFormSet.extra += 1
         formset = ItemCreateFormSet(request.POST)

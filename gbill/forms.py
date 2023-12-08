@@ -12,7 +12,7 @@ class DetailForm(forms.ModelForm):
         widgets = {
             'payee': forms.Select(attrs={'class': 'person-select'}),
             'desc': forms.TextInput(attrs={'class': 'label-text-form', 'readOnly': 'readOnly', 'ondblClick': 'this.readOnly=!this.readOnly'}),
-            'amount': forms.NumberInput(attrs={'class': 'number-form', 'step': '0.01', 'min': '0'}),
+            'amount': forms.NumberInput(attrs={'class': 'number-form','id': 'total-amount', 'step': '0.01', 'min': '0'}),
         }
 
 class BillForm(forms.ModelForm):
@@ -25,7 +25,10 @@ class BillForm(forms.ModelForm):
         }
 
     desc = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'desc-form'}))
-    amount = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={'class': 'number-form', 'step': '0.01', 'min': '0'}))
+    amount = forms.DecimalField(
+        required=False, 
+        widget=forms.NumberInput(attrs={'class': 'number-form','id': 'total-amount', 'step': '0.01', 'min': '0'})
+    )
 
     def __init__(self, *args, **kwargs) -> None:
         super(BillForm, self).__init__(*args, **kwargs)
