@@ -20,7 +20,6 @@ venv.bak/
 *.pot
 *.pyc
 __pycache__
-project
 db.sqlite3
 media
 
